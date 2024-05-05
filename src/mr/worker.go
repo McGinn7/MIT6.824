@@ -42,17 +42,12 @@ func Worker(mapf func(string, string) []KeyValue,
 		}
 		rsp := TaskResponse{}
 		call("Coordinator.GetTask", &req, &rsp)
-		fmt.Println("[worker] wid = ", id, ", rsp = ", rsp)
 		switch rsp.TaskType {
 		case "MAP":
-			fmt.Println("[worker][map] pid = ", id)
 			_map(id, rsp.TaskId, rsp.NReduce, rsp.Filepath, mapf)
 		case "REDUCE":
-			fmt.Println("[worker][reduce] pid = ", id, ", tid = ", rsp.TaskId)
 			_reduce(id, rsp.TaskId, rsp.NMap, reducef)
-			fmt.Println("[worker][reduce][done] pid = ", id, ", tid = ", rsp.TaskId)
 		default:
-			fmt.Println("[worker][done] pid = ", id)
 			return
 		}
 		lastTaskId = rsp.TaskId
@@ -91,7 +86,6 @@ func _reduce(workerId int, reduceId int, nMap int, reducef func(string, []string
 		if err != nil {
 			continue
 		}
-		fmt.Printf("[worker][reduce] mid = %d, rid = %d\n", mapId, reduceId)
 		content, err := io.ReadAll(file)
 		if err != nil {
 			continue
@@ -118,12 +112,6 @@ func _reduce(workerId int, reduceId int, nMap int, reducef func(string, []string
 	sort.Strings(keys)
 	outFile, _ := os.Create(reduceTempFilename(reduceId, workerId))
 	for _, key := range keys {
-		if reduceId == 2 && result[key][0] == "x" {
-			for i := 0; i < len(result[key]); i++ {
-				pop_value := result[key][:len(result[key])-i]
-				fmt.Printf("[worker][reduce] wid = %d, rid = %d, key = %v, value = %v, pop_result = %v\n", workerId, reduceId, key, pop_value, reducef(key, pop_value))
-			}
-		}
 		fmt.Fprintf(outFile, "%v %v\n", key, reducef(key, result[key]))
 	}
 	outFile.Close()

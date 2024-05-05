@@ -1,7 +1,6 @@
 package mr
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -13,19 +12,18 @@ import (
 
 type Coordinator struct {
 	// Your definitions here.
-	lock       sync.Mutex
-	nMap       int
-	nReduce    int
-	stage      string
-	taskStatus map[int]bool
-	taskList   chan Task
-	reviewList chan Task
+	lock             sync.Mutex
+	nMap             int
+	nReduce          int
+	stage            string
+	taskStatus       map[int]bool
+	taskList         chan Task
+	reviewList       chan Task
+	timeout_duration time.Duration
 }
 
 // Your code here -- RPC handlers for the worker to call.
 func (c *Coordinator) GetTask(req *TaskRequest, rsp *TaskResponse) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	if req.LastTaskType == c.stage {
 		switch req.LastTaskType {
@@ -40,7 +38,7 @@ func (c *Coordinator) GetTask(req *TaskRequest, rsp *TaskResponse) error {
 						Id:       i,
 						Type:     "REDUCE",
 						Filepath: "",
-						TTL:      time.Now().Add(10 * time.Second),
+						TTL:      time.Now().Add(c.timeout_duration),
 					}
 					c.taskList <- task
 				}
@@ -71,7 +69,7 @@ func (c *Coordinator) GetTask(req *TaskRequest, rsp *TaskResponse) error {
 			rsp.NMap = c.nMap
 			rsp.NReduce = c.nReduce
 
-			task.TTL = time.Now().Add(10 * time.Second)
+			task.TTL = time.Now().Add(c.timeout_duration)
 			c.reviewList <- task
 			return nil
 		}
@@ -123,20 +121,20 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		bufferSize = nReduce
 	}
 	c := Coordinator{
-		nMap:       len(files),
-		nReduce:    nReduce,
-		stage:      "MAP",
-		taskStatus: make(map[int]bool),
-		taskList:   make(chan Task, bufferSize),
-		reviewList: make(chan Task, bufferSize),
+		nMap:             len(files),
+		nReduce:          nReduce,
+		stage:            "MAP",
+		taskStatus:       make(map[int]bool),
+		taskList:         make(chan Task, bufferSize),
+		reviewList:       make(chan Task, bufferSize),
+		timeout_duration: 10 * time.Second,
 	}
-	fmt.Printf("[coordinator] nMap = %d, nReduce = %d\n", c.nMap, c.nReduce)
 	for i, file := range files {
 		task := Task{
 			Id:       i,
 			Type:     "MAP",
 			Filepath: file,
-			TTL:      time.Now().Add(10 * time.Second),
+			TTL:      time.Now().Add(c.timeout_duration),
 		}
 		c.taskList <- task
 	}
@@ -147,7 +145,7 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		for task := range c.reviewList {
 			time.Sleep(time.Until(task.TTL))
 			if finished, ok := c.taskStatus[task.Id]; !ok || !finished {
-				task.TTL = time.Now().Add(10 * time.Second)
+				task.TTL = time.Now().Add(c.timeout_duration)
 				c.taskList <- task
 			}
 		}
