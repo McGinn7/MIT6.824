@@ -28,9 +28,6 @@ func ihash(key string) int {
 // main/mrworker.go calls this function.
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-
-	// Your worker implementation here.
-	// pid 作为 workerId
 	id := os.Getpid()
 	lastTaskId := -1
 	lastTaskType := ""
@@ -53,10 +50,6 @@ func Worker(mapf func(string, string) []KeyValue,
 		lastTaskId = rsp.TaskId
 		lastTaskType = rsp.TaskType
 	}
-
-	// uncomment to send the Example RPC to the coordinator.
-	// CallExample()
-
 }
 
 func _map(workerId int, mapId int, nReduce int, filepath string, mapf func(string, string) []KeyValue) {

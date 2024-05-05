@@ -6,13 +6,11 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
-	"sync"
 	"time"
 )
 
 type Coordinator struct {
 	// Your definitions here.
-	lock             sync.Mutex
 	nMap             int
 	nReduce          int
 	stage            string
