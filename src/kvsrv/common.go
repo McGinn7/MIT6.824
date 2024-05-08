@@ -4,7 +4,7 @@ package kvsrv
 type PutAppendArgs struct {
 	Key   string
 	Value string
-	ReqId string
+	ReqId int64
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
 }
@@ -15,7 +15,7 @@ type PutAppendReply struct {
 
 type GetArgs struct {
 	Key   string
-	ReqId string
+	ReqId int64
 }
 
 type GetReply struct {

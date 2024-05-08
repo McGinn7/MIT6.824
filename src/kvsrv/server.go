@@ -17,7 +17,7 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 type KVServer struct {
 	mu     sync.Mutex
 	data   map[string]string
-	record map[string]string
+	record map[int64]string
 }
 
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
@@ -82,6 +82,6 @@ func (kv *KVServer) DoneAppend(args *PutAppendArgs, reply *PutAppendReply) {
 func StartKVServer() *KVServer {
 	kv := new(KVServer)
 	kv.data = make(map[string]string, 20)
-	kv.record = make(map[string]string)
+	kv.record = make(map[int64]string)
 	return kv
 }
